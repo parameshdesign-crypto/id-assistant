@@ -16,16 +16,19 @@ export default async function handler(req, res) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: system + '\n\n' + userText }] }]
+          system_instruction: { parts: [{ text: system }] },
+          contents: [{ role: 'user', parts: [{ text: userText }] }]
         })
       }
     );
 
     const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response received.';
+    
+    if (data.error) return res.status(500).json({ error: data.error.message });
+    
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) return res.status(500).json({ error: 'Empty response from Gemini: ' + JSON.stringify(data) });
+    
     res.status(200).json({ result: text });
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-}
