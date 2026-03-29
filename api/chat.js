@@ -10,25 +10,23 @@ export default async function handler(req, res) {
   if (!userText) return res.status(400).json({ error: 'No input provided' });
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: system }] },
-          contents: [{ role: 'user', parts: [{ text: userText }] }]
-        })
-      }
-    );
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ 
+          role: 'user', 
+          parts: [{ text: system + '\n\n' + userText }] 
+        }]
+      })
+    });
 
     const data = await response.json();
-    
-    if (data.error) return res.status(500).json({ error: data.error.message });
-    
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) return res.status(500).json({ error: 'Empty response from Gemini: ' + JSON.stringify(data) });
-    
-    res.status(200).json({ result: text });
+    res.status(200).json({ result: JSON.stringify(data) });
 
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
