@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ID Assistant</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#141414;color:#e8e8e8;min-height:100vh;display:flex}
+#sidebar{width:200px;background:#0e0e0e;border-right:1px solid #222;display:flex;flex-direction:column;flex-shrink:0;min-height:100vh}
+.logo{padding:18px 16px 14px;font-size:14px;font-weight:600;color:#fff;border-bottom:1px solid #222}
+.logo span{display:block;font-size:11px;font-weight:400;color:#666;margin-top:3px}
+.nav-btn{display:block;width:100%;text-align:left;padding:11px 16px;font-size:13px;color:#888;background:none;border:none;border-left:3px solid transparent;cursor:pointer;transition:all 0.12s}
+.nav-btn:hover{background:#1a1a1a;color:#e8e8e8}
+.nav-btn.active{color:#fff;font-weight:500;border-left:3px solid #E9A24B;background:#1a1a1a}
+#main{flex:1;padding:28px;overflow-y:auto}
+.tool-panel{display:none;max-width:680px}
+.tool-panel.active{display:block}
+.tool-title{font-size:18px;font-weight:600;color:#fff;margin-bottom:6px}
+.tool-desc{font-size:13px;color:#888;margin-bottom:20px;line-height:1.6}
+textarea{width:100%;min-height:100px;padding:12px 14px;font-size:13px;font-family:inherit;resize:vertical;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;color:#e8e8e8;line-height:1.6}
+textarea:focus{outline:none;border-color:#444}
+input[type=text]{width:100%;padding:11px 14px;font-size:13px;font-family:inherit;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;color:#e8e8e8;margin-bottom:12px}
+input[type=text]:focus{outline:none;border-color:#444}
+select{padding:8px 12px;font-size:13px;font-family:inherit;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;color:#e8e8e8}
+.row{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.go-btn{padding:9px 22px;font-size:13px;cursor:pointer;background:#E9A24B;color:#1a0f00;border:none;border-radius:8px;font-weight:600}
+.go-btn:hover{background:#d4903e}
+.go-btn:active{transform:scale(0.97)}
+.go-btn:disabled{opacity:0.5;cursor:not-allowed}
+.output{margin-top:18px;padding:16px;background:#1a1a1a;border-radius:10px;border:1px solid #2a2a2a;font-size:13px;line-height:1.9;color:#e8e8e8;white-space:pre-wrap;min-height:100px}
+.output a{color:#E9A24B;text-decoration:none}
+.output a:hover{text-decoration:underline}
+.placeholder{color:#444;font-style:italic}
+.thinking{color:#666;font-style:italic}
+.error{color:#e05c5c}
+.copy-btn{margin-top:10px;padding:6px 14px;font-size:12px;cursor:pointer;background:transparent;color:#888;border:1px solid #333;border-radius:6px}
+.copy-btn:hover{color:#e8e8e8;border-color:#555}
+.upload-area{border:1px dashed #333;border-radius:10px;padding:16px;text-align:center;cursor:pointer;margin-bottom:10px;transition:border-color 0.12s}
+.upload-area:hover{border-color:#555}
+.upload-area input{display:none}
+.upload-label{font-size:12px;color:#666}
+.divider{text-align:center;font-size:11px;color:#444;margin:10px 0}
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div class="logo">ID Assistant<span>for industrial designers</span></div>
+  <button class="nav-btn active" onclick="setTool('keywords',this)">🔍 Keyword Generator</button>
+  <button class="nav-btn" onclick="setTool('prompt',this)">✍️ Prompt Writer</button>
+  <button class="nav-btn" onclick="setTool('formlang',this)">📐 Form Namer</button>
+  <button class="nav-btn" onclick="setTool('critique',this)">💬 Concept Critiquer</button>
+  <button class="nav-btn" onclick="setTool('reference',this)">🧭 Reference Finder</button>
+  <button class="nav-btn" onclick="setTool('vault',this)">📚 Designer Vault</button>
+</div>
+
+<div id="main">
+
+  <div class="tool-panel active" id="panel-keywords">
+    <div class="tool-title">Keyword Generator</div>
+    <div class="tool-desc">Describe a form or element in plain language → get Pinterest & Behance search keywords grouped by category</div>
+    <textarea id="keywords-input" placeholder="e.g. the part where the mixer grinder jar meets the body, it widens upward like a flared cup..."></textarea>
+    <div class="row"><button class="go-btn" onclick="runTool('keywords')">Generate keywords</button></div>
+    <div class="output" id="keywords-output"><span class="placeholder">Your keywords will appear here.</span></div>
+    <button class="copy-btn" onclick="copyOutput('keywords-output')">Copy output</button>
+  </div>
+
+  <div class="tool-panel" id="panel-prompt">
+    <div class="tool-title">AI Image Prompt Writer</div>
+    <div class="tool-desc">Describe your concept → get a ready-to-copy prompt for your chosen AI image tool</div>
+    <textarea id="prompt-input" placeholder="e.g. mixer grinder with tulip neck, seamless jar profile, half-height side handle, circular boss on body, silver and black plastic..."></textarea>
+    <div class="row">
+      <span style="font-size:13px;color:#888">Target:</span>
+      <select id="prompt-tool"><option>Midjourney</option><option>Leonardo AI</option><option>Ideogram</option></select>
+      <button class="go-btn" onclick="runTool('prompt')">Write prompt</button>
+    </div>
+    <div class="output" id="prompt-output"><span class="placeholder">Your prompt will appear here.</span></div>
+    <button class="copy-btn" onclick="copyOutput('prompt-output')">Copy output</button>
+  </div>
+
+  <div class="tool-panel" id="panel-formlang">
+    <div class="tool-title">Form Language Namer</div>
+    <div class="tool-desc">Describe a shape → get the correct industrial design terminology for forms, surfaces, and transitions</div>
+    <textarea id="formlang-input" placeholder="e.g. the neck widens from a narrow waist upwards, like a flower opening, sitting between the motor base and the jar..."></textarea>
+    <div class="row"><button class="go-btn" onclick="runTool('formlang')">Name the form</button></div>
+    <div class="output" id="formlang-output"><span class="placeholder">Form terminology will appear here.</span></div>
+    <button class="copy-btn" onclick="copyOutput('formlang-output')">Copy output</button>
+  </div>
+
+  <div class="tool-panel" id="panel-critique">
+    <div class="tool-title">Concept Critiquer</div>
+    <div class="tool-desc">Describe your concept → get honest pushback, weak points identified, and suggestions to strengthen it</div>
+    <textarea id="critique-input" placeholder="e.g. mixer grinder where the jar flows seamlessly into the body, with a half-height handle on the side and a large circular boss on the surface..."></textarea>
+    <div class="row"><button class="go-btn" onclick="runTool('critique')">Critique it</button></div>
+    <div class="output" id="critique-output"><span class="placeholder">Critique will appear here.</span></div>
+    <button class="copy-btn" onclick="copyOutput('critique-output')">Copy output</button>
+  </div>
+
+  <div class="tool-panel" id="panel-reference">
+    <div class="tool-title">Reference Direction Finder</div>
+    <div class="tool-desc">Describe what you're designing → get unexpected cross-category references and analogies to explore</div>
+    <textarea id="reference-input" placeholder="e.g. compact mixer grinder for Indian middle-class kitchens, want it to feel premium but approachable, silver and black CMF..."></textarea>
+    <div class="row"><button class="go-btn" onclick="runTool('reference')">Find references</button></div>
+    <div class="output" id="reference-output"><span class="placeholder">Reference directions will appear here.</span></div>
+    <button class="copy-btn" onclick="copyOutput('reference-output')">Copy output</button>
+  </div>
+
+  <div class="tool-panel" id="panel-vault">
+    <div class="tool-title">Designer Vault</div>
+    <div class="tool-desc">Search any industrial designer → era, philosophy, process, key works, and visual links</div>
+    <input type="text" id="vault-input" placeholder="e.g. Dieter Rams, Naoto Fukasawa, Raymond Loewy, Marc Newson...">
+    <div class="row" style="margin-top:0"><button class="go-btn" onclick="runTool('vault')">Search vault</button></div>
+    <div class="output" id="vault-output"><span class="placeholder">Designer info will appear here.</span></div>
+    <button class="copy-btn" onclick="copyOutput('vault-output')">Copy output</button>
+  </div>
+
+</div>
+
+<script>
+function setTool(tool, btn) {
+  document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + tool).classList.add('active');
+  btn.classList.add('active');
+}
+
+function copyOutput(id) {
+  const text = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(text).then(() => alert('Copied!'));
+}
+
+function linkify(text) {
+  return text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+}
+
+const systems = {
+  keywords: `You are an expert industrial design researcher. Given a description of a form or design element, generate 10-12 specific search keywords for Pinterest and Behance. Group them into 3 categories with short category labels. Use real design terminology. Be precise and practical. No intro sentence, just the grouped keywords.`,
+  prompt: `You are an expert AI image generation prompt writer for product design renders. Write a detailed, ready-to-copy prompt optimised for the specified tool. Cover: form language, silhouette, materials, CMF, lighting, camera angle, mood, background. For Midjourney add --ar 3:4 --style raw --q 2 at the end. For Leonardo AI and Ideogram adjust accordingly. No explanation, just the prompt.`,
+  formlang: `You are an expert industrial designer and design educator. Analyse the text description provided. Identify and name design elements using correct industrial design terminology. Cover: form signature names, silhouette language, surface transition terms, specific component names, any architectural or design history references the form borrows from. Be precise and educational.`,
+  critique: `You are a senior industrial designer critiquing a junior designer's concept. Be honest and direct. Structure your response as: What works / What doesn't / Manufacturing and usability concerns / Market positioning issues / 2-3 specific suggestions to strengthen it. Don't just validate — genuinely challenge. Keep it sharp and constructive.`,
+  reference: `You are an industrial design strategist with encyclopedic cross-category knowledge. Given a brief or concept, suggest 6 unexpected reference directions from outside the obvious product category — other industries, historical objects, natural forms, cultural artifacts, architecture, fashion. For each: name the reference, why it's relevant, and what specific element to borrow. Keep it inspiring and non-obvious.`,
+  vault: `You are an expert on industrial design history with deep knowledge of designers across all eras. For the requested designer provide: Era and background (2 sentences), Core design philosophy (3 sentences), Their design process and method, 5 key products they are known for with a brief note on each, What a junior designer can learn from them, and finally three links on their own lines:
+Pinterest: https://pinterest.com/search/pins/?q=DESIGNER+NAME+industrial+design
+Behance: https://www.behance.net/search/projects?search=DESIGNER+NAME
+Dezeen: https://www.dezeen.com/?s=DESIGNER+NAME
+Replace DESIGNER+NAME with the actual name using + between words. Plain text only, no markdown.`
+};
+
+async function runTool(tool) {
+  const inputMap = {
+    keywords: 'keywords-input',
+    prompt: 'prompt-input',
+    formlang: 'formlang-input',
+    critique: 'critique-input',
+    reference: 'reference-input',
+    vault: 'vault-input'
+  };
+
+  const inputEl = document.getElementById(inputMap[tool]);
+  const userText = tool === 'prompt'
+    ? `Target tool: ${document.getElementById('prompt-tool').value}\n\nConcept: ${inputEl.value.trim()}`
+    : inputEl.value.trim();
+
+  if (!userText || userText.trim() === '') {
+    alert('Please enter something first.');
+    return;
+  }
+
+  const outputEl = document.getElementById(tool + '-output');
+  outputEl.innerHTML = '<span class="thinking">Thinking...</span>';
+
+  const btn = outputEl.previousElementSibling.querySelector('.go-btn');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system: systems[tool], userText })
+    });
+
+    const data = await res.json();
+
+    if (data.error) {
+      outputEl.innerHTML = `<span class="error">Error: ${data.error}</span>`;
+    } else {
+      outputEl.innerHTML = linkify(data.result);
+    }
+  } catch (err) {
+    outputEl.innerHTML = `<span class="error">Something went wrong: ${err.message}</span>`;
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
